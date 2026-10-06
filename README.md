@@ -6,6 +6,8 @@ used.
 
 **Live demo:** https://tommy134040.github.io/test123/
 
+![Screenshot of the UOB IT PMO Kanban board](./screenshot.png)
+
 ## Running it locally
 
 No build step, no install. Just open `index.html` directly in a browser
