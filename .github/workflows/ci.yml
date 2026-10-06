@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check index.html exists and has basic structure
+        run: |
+          test -s index.html
+          grep -qi '<!DOCTYPE html>' index.html
+          grep -qi '<html' index.html
+          grep -qi '</html>' index.html
+
+      - name: Check embedded <script> block is syntactically valid JS
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('index.html', 'utf8');
+            const match = html.match(/<script>([\s\S]*)<\/script>/);
+            if (!match) { throw new Error('No inline <script> block found'); }
+            fs.writeFileSync('_inline-script.js', match[1]);
+          "
+          node --check _inline-script.js
