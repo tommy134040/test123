@@ -622,15 +622,15 @@
       <div class="form-grid">
         <div class="form-field full-width">
           <label for="field-title">Task Title <span class="required-mark">*</span></label>
-          <input type="text" id="field-title" maxlength="80" required>
-          <span class="field-error" id="error-title"></span>
+          <input type="text" id="field-title" maxlength="80" required aria-describedby="error-title">
+          <span class="field-error" id="error-title" role="alert"></span>
         </div>
 
         <div class="form-field full-width">
           <label for="field-description">Description</label>
-          <textarea id="field-description" maxlength="500" rows="3"></textarea>
+          <textarea id="field-description" maxlength="500" rows="3" aria-describedby="description-count error-description"></textarea>
           <span class="char-count" id="description-count">0 / 500</span>
-          <span class="field-error" id="error-description"></span>
+          <span class="field-error" id="error-description" role="alert"></span>
         </div>
 
         <div class="form-field">
@@ -659,8 +659,8 @@
 
         <div class="form-field">
           <label for="field-assignee">Assignee <span class="required-mark">*</span></label>
-          <input type="text" id="field-assignee" required>
-          <span class="field-error" id="error-assignee"></span>
+          <input type="text" id="field-assignee" required aria-describedby="error-assignee">
+          <span class="field-error" id="error-assignee" role="alert"></span>
         </div>
 
         <div class="form-field">
@@ -675,8 +675,8 @@
 
         <div class="form-field">
           <label for="field-due-date">Due Date <span class="required-mark">*</span></label>
-          <input type="date" id="field-due-date" required>
-          <span class="field-error" id="error-due-date"></span>
+          <input type="date" id="field-due-date" required aria-describedby="error-due-date">
+          <span class="field-error" id="error-due-date" role="alert"></span>
         </div>
 
         <div class="form-field">
