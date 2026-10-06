@@ -6,6 +6,30 @@ license: Complete terms in LICENSE.txt
 
 # Frontend Design
 
+## Project Context: UOB IT PMO Kanban Board
+
+This repo (`tommy134040/test123`) is a single-file, dependency-free Kanban
+board for an internal IT PMO demo. Apply this skill's judgment within these
+constraints rather than against them:
+
+- **One file, no build step**: all markup, `<style>`, and `<script>` live in
+  `index.html`. No separate CSS/JS files, no bundler, no npm dependencies.
+- **No external resources**: no CDN fonts, no icon libraries, no images.
+  Icons are inline SVG or Unicode glyphs; type comes from the system font
+  stack (`--font-stack`). Any new design direction must stay within this —
+  don't propose a Google Fonts pairing or an icon package for this project.
+- **Existing token system**: colors, radii, and spacing are already CSS
+  custom properties on `:root` (`--color-primary`, `--color-accent`,
+  `--color-critical/high/medium/low`, `--radius-*`, `--space-*`). Extend
+  these tokens for new work instead of introducing ad hoc literal colors.
+- **Corporate blue palette, intentionally**: the brief calls for a neutral
+  "UOB IT PMO" text wordmark and a blue-only palette — no real UOB branding.
+  Distinctive-design risk-taking should happen inside that constraint (type,
+  layout, spacing), not by abandoning the palette.
+- **Accessibility baseline already in place**: visible focus rings,
+  `aria-live` toast region, priority conveyed by text label + color (never
+  color alone), labelled form controls. Preserve these on any new component.
+
 Approach this as the design lead at a design studio known for giving every client a distinct visual identity that is not mistaken for anyone else's. This client has already rejected proposals that felt cliché or templated, and is paying for a distinctive point of view: make deliberate, opinionated choices about palette, typography, and layout that are specific to this brief, and take aesthetic risk if justified.
 
 ## Ground your designs in the subject matter
