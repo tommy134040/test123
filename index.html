@@ -36,6 +36,18 @@
     --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Consolas, "Liberation Mono", Menlo, monospace;
     --focus-ring: 3px solid #1d5fd6aa;
+
+    /* Categorical chart palette (status pie): the dataviz skill's own
+       validated 4-slot order — chroma floor, CVD adjacent-pair separation
+       (worst pair deltaE 9.1), and normal-vision floor all pass in this
+       exact order. Kept distinct from --color-critical/success/etc., which
+       encode priority, not chart category — reusing those here put red
+       (Blocked) directly next to green (Done): deltaE 3.1, a real
+       red-green colorblind failure caught by the validator. */
+    --chart-cat-1: #2a78d6;
+    --chart-cat-2: #eb6834;
+    --chart-cat-3: #1baf7a;
+    --chart-cat-4: #eda100;
   }
 
   * { box-sizing: border-box; }
@@ -222,6 +234,106 @@
 
   .filter-clear {
     align-self: flex-end;
+  }
+
+  /* ============================= Overview: status pie ============================= */
+  .overview {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .overview h2 {
+    margin: 0 0 var(--space-sm);
+    font-size: 0.95rem;
+  }
+
+  .overview-pie-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+  }
+
+  .overview-pie {
+    flex: none;
+    overflow: visible;
+  }
+
+  .overview-pie text {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .overview-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+  }
+
+  .overview-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .overview-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  .overview-legend .count {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+  }
+
+  .overview-note {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .overview-table-toggle {
+    font-size: 0.78rem;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    margin-top: var(--space-xs);
+  }
+  .overview-table-toggle:hover { background: var(--color-primary-light); }
+
+  .overview-table {
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-top: var(--space-sm);
+  }
+  .overview-table caption { text-align: left; font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 4px; }
+  .overview-table th,
+  .overview-table td {
+    text-align: left;
+    padding: 4px 10px 4px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .overview-table td.num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
 
   /* ============================= Board ============================= */
@@ -606,6 +718,9 @@
     <button type="button" class="btn btn-ghost filter-clear" id="clear-filters-btn">Clear filters</button>
   </section>
 
+  <!-- ============================= Overview: status pie (always totals, not filtered) ============================= -->
+  <section class="overview" id="overview" aria-label="All activities by status"></section>
+
   <!-- ============================= Kanban board ============================= -->
   <section class="board" id="board" aria-label="Kanban board"></section>
 </main>
@@ -968,11 +1083,117 @@ function renderColumn(status) {
   `;
 }
 
+/* =========================================================================
+   OVERVIEW — status pie chart. Colors are --chart-cat-1..4, the dataviz
+   skill's own validated categorical order (see the :root comment above the
+   tokens) — never the priority tokens (--color-critical etc.), which encode
+   a different thing and were shown by the palette validator to put
+   Blocked/Done (red/green) in a failing colorblind-adjacent pair.
+   Always computed over state.tasks, matching renderSummaryStrip's existing
+   unfiltered convention — this is a global total, not scoped by the filter
+   bar above it.
+   ========================================================================= */
+const CHART_CATEGORY_COLOR = {
+  "Backlog": "var(--chart-cat-1)",
+  "In Progress": "var(--chart-cat-2)",
+  "Blocked": "var(--chart-cat-3)",
+  "Done": "var(--chart-cat-4)",
+};
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function pieSlicePath(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+}
+
+function renderOverview() {
+  const total = state.tasks.length;
+  const counts = STATUSES.map((status) => ({
+    status,
+    n: state.tasks.filter((t) => t.status === status).length,
+  }));
+
+  const overview = document.getElementById("overview");
+
+  if (total === 0) {
+    overview.innerHTML = `<p class="overview-note">No tasks yet. Add the first task to see the status breakdown.</p>`;
+    return;
+  }
+
+  const nonZero = counts.filter((c) => c.n > 0);
+  const cx = 70, cy = 70, r = 60;
+
+  let svgSlices;
+  if (nonZero.length === 1) {
+    // A full-circle arc is degenerate (0deg == 360deg); draw a plain circle.
+    svgSlices = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${CHART_CATEGORY_COLOR[nonZero[0].status]}" stroke="var(--color-surface)" stroke-width="2"><title>${escapeHtml(nonZero[0].status)}: ${nonZero[0].n} (100%)</title></circle>`;
+  } else {
+    let acc = 0;
+    svgSlices = counts
+      .filter((c) => c.n > 0)
+      .map((c) => {
+        const startAngle = (acc / total) * 360;
+        acc += c.n;
+        const endAngle = (acc / total) * 360;
+        const pct = Math.round((c.n / total) * 1000) / 10;
+        return `<path d="${pieSlicePath(cx, cy, r, startAngle, endAngle)}" fill="${CHART_CATEGORY_COLOR[c.status]}" stroke="var(--color-surface)" stroke-width="2"><title>${escapeHtml(c.status)}: ${c.n} (${pct}%)</title></path>`;
+      })
+      .join("");
+  }
+
+  const legend = counts
+    .map((c) => {
+      const pct = Math.round((c.n / total) * 1000) / 10;
+      return `<li><span class="overview-swatch" style="background: ${CHART_CATEGORY_COLOR[c.status]}"></span>${escapeHtml(c.status)} <span class="count">${c.n} (${pct}%)</span></li>`;
+    })
+    .join("");
+
+  const tableRows = counts
+    .map((c) => {
+      const pct = Math.round((c.n / total) * 1000) / 10;
+      return `<tr><td>${escapeHtml(c.status)}</td><td class="num">${c.n}</td><td class="num">${pct}%</td></tr>`;
+    })
+    .join("");
+
+  overview.innerHTML = `
+    <div>
+      <h2>All activities by status</h2>
+      <div class="overview-pie-wrap">
+        <svg class="overview-pie" width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Pie chart: ${total} tasks by status">
+          ${svgSlices}
+        </svg>
+        <ul class="overview-legend">${legend}</ul>
+      </div>
+      <button type="button" class="overview-table-toggle" id="overview-table-toggle" aria-expanded="false" aria-controls="overview-table">View as table</button>
+      <table class="overview-table" id="overview-table" hidden>
+        <caption>Task status breakdown, ${total} total</caption>
+        <thead><tr><th scope="col">Status</th><th scope="col">Count</th><th scope="col">Share</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`;
+
+  const toggleBtn = document.getElementById("overview-table-toggle");
+  const table = document.getElementById("overview-table");
+  toggleBtn.addEventListener("click", () => {
+    const willShow = table.hidden;
+    table.hidden = !willShow;
+    toggleBtn.setAttribute("aria-expanded", String(willShow));
+    toggleBtn.textContent = willShow ? "Hide table" : "View as table";
+  });
+}
+
 function renderBoard() {
   const board = document.getElementById("board");
   board.innerHTML = STATUSES.map(renderColumn).join("");
   attachBoardEventListeners();
   renderSummaryStrip();
+  renderOverview();
 }
 
 function renderProjectFilterOptions() {
