@@ -1,5 +1,5 @@
 ---
-description: Push the current project to a GitHub repo, set up README/Pages/CI, update the About section, and security-scan before anything goes out
+description: Push the current project to a GitHub repo, set up README/Pages/CI, add a screenshot, update the About section, and security-scan before anything goes out
 argument-hint: <github-repo-url>
 ---
 
@@ -116,7 +116,30 @@ README that already covers this.
 4. The resulting URL is `https://<owner>.github.io/<repo>/` (or the custom
    domain if one is configured) — confirm which applies.
 
-## 6. Update the repository "About" section
+## 6. Capture a screenshot and add it to README.md
+
+1. Look for a connected Playwright MCP tool (search if not already loaded)
+   and use it if available.
+2. If no Playwright MCP tool is connected — check first rather than assuming
+   — fall back to the Playwright *npm package* driving the pre-installed
+   Chromium directly via Bash/Node (install with
+   `npm install playwright --no-save --prefix <scratch-dir>` if not already
+   present; the browser binary is already at
+   `/opt/pw-browsers/chromium-*/chrome-linux/chrome` — do not
+   `playwright install`).
+3. Try navigating to the live Pages URL confirmed in step 5. If the session's
+   egress proxy denies that host (403/`connect_rejected` — check
+   `$HTTPS_PROXY/__agentproxy/status` if unsure), do not retry or route
+   around it. Fall back to rendering the local file directly via a
+   `file://` URL on the project's entry point (e.g. `index.html`) — same
+   content, no network dependency, and more reliable for a static site
+   anyway.
+4. Save the screenshot into the repo (e.g. `screenshot.png` at the repo
+   root) and reference it near the top of `README.md` with a Markdown image
+   tag, close to the live-demo link.
+5. Commit and push both files together.
+
+## 7. Update the repository "About" section
 
 1. Look for a GitHub MCP tool that updates repo metadata (description,
    homepage, topics) — search for it if not already loaded (e.g. tool names
@@ -126,13 +149,16 @@ README that already covers this.
 2. If no such tool is available or it's denied, fall back to the GitHub REST
    API via `gh api` (`PATCH /repos/{owner}/{repo}` for description/homepage,
    `PUT /repos/{owner}/{repo}/topics` for topics). If that path is also
-   blocked by the session's proxy, tell the user which fields need setting
-   and let them do it manually in Settings rather than silently skipping it.
+   blocked by the session's proxy ("Repository settings writes are not
+   permitted through this proxy" — confirmed behavior, don't retry it), tell
+   the user which fields need setting and give them the exact manual steps
+   (gear icon next to "About" on the repo page) rather than silently
+   skipping it.
 
-## 7. Add the Pages link to the About section
+## 8. Add the Pages link to the About section
 
 Once step 5 has confirmed a working Pages URL, set the repo's `homepage`
-field to that URL using the same mechanism as step 6 (don't guess the URL —
+field to that URL using the same mechanism as step 7 (don't guess the URL —
 use the one confirmed live).
 
 ## Final report
@@ -143,5 +169,6 @@ End with a short summary (not a wall of logs):
   resolved).
 - CI workflow status.
 - Live Pages URL (only if confirmed working).
+- Whether the screenshot came from the live URL or a local fallback render.
 - What got set in the About section.
 - Anything still waiting on the user (e.g. a manual Settings step).
