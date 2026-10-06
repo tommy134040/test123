@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ABC IT PMO Kanban Board</title>
+<title>UOB IT PMO Kanban Board</title>
 <style>
   /* ============================= Design tokens ============================= */
   :root {
@@ -655,7 +655,7 @@
   <div class="header-top">
     <div class="wordmark">
       <span class="wordmark-badge">PMO</span>
-      <span>ABC IT PMO — Kanban Board</span>
+      <span>UOB IT PMO — Kanban Board</span>
     </div>
     <button type="button" class="btn btn-primary" id="open-add-task-btn">+ Add Task</button>
   </div>
@@ -868,7 +868,7 @@ function formatDate(iso) {
 
 function nextTaskId() {
   state.taskIdCounter += 1;
-  return "ABC-ITPM-" + String(state.taskIdCounter).padStart(4, "0");
+  return "UOB-ITPM-" + String(state.taskIdCounter).padStart(4, "0");
 }
 
 function priorityClass(priority) {
@@ -1403,7 +1403,7 @@ async function notifyNewTask(task) {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        _subject: `[ABC IT PMO] New task ${task.id}: ${task.title}`,
+        _subject: `[UOB IT PMO] New task ${task.id}: ${task.title}`,
         _template: "table",
         _captcha: "false",
         "Task ID": task.id,
