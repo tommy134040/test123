@@ -637,16 +637,112 @@
     .form-grid { grid-template-columns: 1fr; }
   }
 
-  /* ============================= Toasts ============================= */
+  /* ============================= Toasts =============================
+     bottom offset cleared to sit above the floating WhatsApp button
+     (56px + its 24px inset + a gap), so the two never overlap. */
   #toast-region {
     position: fixed;
-    bottom: var(--space-lg);
+    bottom: calc(var(--space-lg) + 56px + var(--space-md));
     right: var(--space-lg);
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
     z-index: 200;
     max-width: 320px;
+  }
+
+  /* ============================= WhatsApp chatbot widget ============================= */
+  .chatbot-fab {
+    position: fixed;
+    bottom: var(--space-lg);
+    right: var(--space-lg);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: #25d366;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(11, 20, 40, 0.3);
+    z-index: 150;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .chatbot-fab:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 18px rgba(11, 20, 40, 0.35);
+  }
+  .chatbot-fab svg { width: 28px; height: 28px; }
+
+  .chatbot-dialog {
+    position: fixed;
+    bottom: calc(var(--space-lg) + 56px + var(--space-md));
+    right: var(--space-lg);
+    width: min(340px, calc(100vw - 2 * var(--space-lg)));
+    max-height: min(480px, calc(100vh - 140px));
+    overflow-y: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(11, 20, 40, 0.25);
+    padding: var(--space-md);
+    z-index: 250;
+  }
+  .chatbot-dialog.hidden { display: none; }
+
+  .chatbot-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .chatbot-dialog-header h2 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .chatbot-dialog-sub {
+    margin: 0 0 var(--space-sm);
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .chatbot-suggestions {
+    list-style: none;
+    margin: 0 0 var(--space-md);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .chatbot-suggestion {
+    display: block;
+    text-decoration: none;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+  .chatbot-suggestion:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-accent);
+  }
+
+  .chatbot-custom-form {
+    display: flex;
+    gap: 6px;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+  }
+  .chatbot-custom-form input {
+    flex: 1;
+    min-width: 0;
   }
 
   .toast {
@@ -816,6 +912,29 @@
 <!-- ============================= Toast region ============================= -->
 <div id="toast-region" aria-live="polite"></div>
 
+<!-- ============================= WhatsApp chatbot widget =============================
+     Click opens the suggestions dialog (see useChatbotDialog() below) rather than
+     linking straight out, so the chat starts with useful context already typed in. -->
+<button type="button" class="chatbot-fab" id="chatbot-fab" aria-haspopup="dialog" aria-expanded="false" aria-controls="chatbot-dialog" aria-label="Chat with IT PMO support on WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+    <path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.236.615 4.33 1.687 6.127L4 29l8.063-1.654A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.818a9.76 9.76 0 0 1-4.98-1.363l-.357-.213-4.785.982.993-4.67-.233-.372A9.77 9.77 0 0 1 5.182 15c0-5.967 4.855-10.818 10.822-10.818 5.967 0 10.818 4.851 10.818 10.818 0 5.967-4.851 10.818-10.818 10.818Zm5.94-8.106c-.325-.163-1.925-.95-2.223-1.059-.298-.108-.515-.163-.732.163-.217.325-.84 1.059-1.03 1.277-.19.217-.38.244-.705.081-.325-.163-1.372-.506-2.613-1.612-.966-.862-1.618-1.927-1.808-2.252-.19-.325-.02-.5.142-.663.146-.145.325-.38.488-.57.163-.19.217-.325.325-.542.108-.217.054-.407-.027-.57-.081-.163-.732-1.763-1.003-2.415-.264-.636-.532-.55-.732-.56l-.624-.011c-.217 0-.57.081-.868.407-.298.325-1.137 1.11-1.137 2.71s1.164 3.144 1.327 3.361c.163.217 2.29 3.496 5.547 4.903.775.335 1.38.535 1.851.684.778.247 1.486.212 2.046.129.624-.093 1.925-.787 2.197-1.547.272-.76.272-1.412.19-1.548-.08-.136-.297-.217-.622-.38Z"/>
+  </svg>
+</button>
+
+<div class="chatbot-dialog hidden" id="chatbot-dialog" role="dialog" aria-labelledby="chatbot-dialog-title">
+  <div class="chatbot-dialog-header">
+    <h2 id="chatbot-dialog-title">IT PMO Support</h2>
+    <button type="button" class="icon-btn" id="chatbot-dialog-close" aria-label="Close chat suggestions" style="color: var(--color-text);">✕</button>
+  </div>
+  <p class="chatbot-dialog-sub">Start a WhatsApp chat with a suggested question, or write your own.</p>
+  <ul class="chatbot-suggestions" id="chatbot-suggestions"></ul>
+  <form class="chatbot-custom-form" id="chatbot-custom-form">
+    <label class="visually-hidden" for="chatbot-custom-input">Your message</label>
+    <input type="text" id="chatbot-custom-input" placeholder="Or type your own question…" maxlength="300">
+    <button type="submit" class="btn btn-secondary">Chat</button>
+  </form>
+</div>
+
 <script>
 "use strict";
 
@@ -829,6 +948,20 @@
    Swap the email address below to redirect notifications.
    ========================================================================= */
 const FORMSUBMIT_ENDPOINT = "https://formsubmit.co/ajax/YOUR_EMAIL@example.com";
+
+/* =========================================================================
+   CONFIG — WhatsApp support number, digits only (country code + number, no
+   "+" or spaces) as required by the wa.me click-to-chat URL format.
+   ========================================================================= */
+const WHATSAPP_NUMBER = "6512345678";
+
+const CHATBOT_SUGGESTIONS = [
+  "Can you give me a status update on my project?",
+  "I'd like to report a blocked task.",
+  "I need to escalate a critical priority item.",
+  "What tasks are overdue right now?",
+  "I have a general IT PMO question.",
+];
 
 /* =========================================================================
    STATE — single source of truth. Everything renders from this object.
@@ -1322,6 +1455,44 @@ function showToast(message, type) {
 }
 
 /* =========================================================================
+   WHATSAPP CHATBOT WIDGET — floating button + suggested-query dialog.
+   useChatbotDialog() is the hook wired to the floating button's click event:
+   rather than linking straight to WhatsApp, it opens a small dialog of
+   suggested IT PMO queries (plus a free-text option) so the chat starts
+   with useful context already typed into the message.
+   ========================================================================= */
+function buildWhatsAppUrl(message) {
+  const base = `https://wa.me/${WHATSAPP_NUMBER}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+}
+
+function renderChatbotSuggestions() {
+  const list = document.getElementById("chatbot-suggestions");
+  list.innerHTML = CHATBOT_SUGGESTIONS.map(
+    (q) =>
+      `<li><a class="chatbot-suggestion" href="${buildWhatsAppUrl(q)}" target="_blank" rel="noopener noreferrer">${escapeHtml(q)}</a></li>`
+  ).join("");
+}
+
+let chatbotLastFocused = null;
+
+function useChatbotDialog() {
+  const dialog = document.getElementById("chatbot-dialog");
+  chatbotLastFocused = document.activeElement;
+  dialog.classList.remove("hidden");
+  document.getElementById("chatbot-fab").setAttribute("aria-expanded", "true");
+  document.getElementById("chatbot-dialog-close").focus();
+}
+
+function closeChatbotDialog() {
+  const dialog = document.getElementById("chatbot-dialog");
+  dialog.classList.add("hidden");
+  document.getElementById("chatbot-fab").setAttribute("aria-expanded", "false");
+  (chatbotLastFocused || document.getElementById("chatbot-fab")).focus();
+  chatbotLastFocused = null;
+}
+
+/* =========================================================================
    FORMSUBMIT NOTIFICATION — fire-and-forget, never blocks the UI
    ========================================================================= */
 async function notifyNewTask(task) {
@@ -1518,6 +1689,29 @@ function init() {
 
   // Default the due-date field's min to today
   document.getElementById("field-due-date").setAttribute("min", todayIsoDate());
+
+  // WhatsApp chatbot widget
+  renderChatbotSuggestions();
+  const chatbotDialog = document.getElementById("chatbot-dialog");
+  const chatbotFab = document.getElementById("chatbot-fab");
+  chatbotFab.addEventListener("click", useChatbotDialog);
+  document.getElementById("chatbot-dialog-close").addEventListener("click", closeChatbotDialog);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !chatbotDialog.classList.contains("hidden")) closeChatbotDialog();
+  });
+  document.addEventListener("click", (e) => {
+    if (chatbotDialog.classList.contains("hidden")) return;
+    if (chatbotDialog.contains(e.target) || chatbotFab.contains(e.target)) return;
+    closeChatbotDialog();
+  });
+  document.getElementById("chatbot-custom-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("chatbot-custom-input");
+    const message = input.value.trim();
+    window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
+    input.value = "";
+    closeChatbotDialog();
+  });
 }
 
 init();
